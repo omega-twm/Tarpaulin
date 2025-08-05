@@ -27,13 +27,13 @@ fi
 # Run conventional commit analysis
 echo "🔍 Analyzing commits for version tag..."
 
-if python3 utils/ci_version.py analyze | grep -q "Recommended version bump: none"; then
+if python3 utils/semver.py analyze | grep -q "Recommended version bump: none"; then
     echo "✅ No version tag needed"
     exit 0
 fi
 
 echo "🚀 Creating version tag based on conventional commits..."
-python3 utils/ci_version.py tag-only
+python3 utils/semver.py auto
 
 # Check if tagging was successful
 if [ $? -eq 0 ]; then

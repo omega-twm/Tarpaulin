@@ -87,29 +87,27 @@ The post-commit hook automatically:
 
 ### Analyze Commits
 ```bash
-python3 utils/ci_version.py analyze
+python3 utils/semver.py analyze
 ```
 Shows commits since last version and recommended bump.
 
 ### Create Version Tag
 ```bash
-python3 utils/ci_version.py tag-only
+python3 utils/semver.py tag [patch|minor|major|epoch]
 ```
-Creates a git tag without modifying any files.
+Creates a git tag for the specified bump type.
+
+### Auto-Create Tag
+```bash
+python3 utils/semver.py auto
+```
+Automatically creates tag based on conventional commits.
 
 ### Check Current Version
 ```bash
-python3 utils/dynamic_version.py  # From git tags
-python3 utils/version.py show     # Legacy method
+python3 utils/semver.py version
 ```
-
-### Manual Version Bump (Legacy)
-```bash
-python3 utils/version.py patch   # 1.0.0 → 1.0.1 (creates tag only)
-python3 utils/version.py minor   # 1.0.0 → 1.1.0 (creates tag only)  
-python3 utils/version.py major   # 1.0.0 → 2.0.0 (creates tag only)
-python3 utils/version.py epoch   # 1.0.0 → 1000.0.0 (creates tag only)
-```
+Shows current version and epoch breakdown.
 
 ## Versioning System
 
@@ -119,7 +117,7 @@ This project uses **tag-only semantic versioning** - version numbers come from g
 - **Version source**: Git tags (e.g., `v1.2.0`)
 - **File modifications**: None (clean git history)
 - **CI behavior**: Creates tags only, no commits
-- **Dynamic versioning**: `python3 utils/dynamic_version.py`
+- **Dynamic versioning**: `python3 utils/semver.py version`
 
 ### Legacy File-Based Method:
 The old approach that modified `pyproject.toml` has been replaced with this cleaner tag-only system.
@@ -152,10 +150,7 @@ git commit -m "epoch: migrate to new AI framework"
 
 ## Configuration Files
 
-- `utils/ci_version.py` - CI-friendly tag-only versioning logic
-- `utils/dynamic_version.py` - Get version from git tags dynamically  
-- `utils/conventional_commits.py` - Main analysis and automation logic
-- `utils/version.py` - Legacy version management (now tag-only)
+- `utils/semver.py` - **All-in-one** semantic versioning tool
 - `hooks/post-commit` - Git hook for local tag-only automation
 - `.github/workflows/semantic-versioning.yml` - GitHub Actions workflow
 - `.gitmessage` - Commit message template
@@ -183,12 +178,12 @@ ls -la .git/hooks/post-commit
 ### Invalid Commit Format
 The system will warn about non-conventional commits but won't fail. Use:
 ```bash
-python3 conventional_commits.py analyze
+python3 utils/semver.py analyze
 ```
 to see which commits are being processed.
 
 ### Manual Override
 If automatic versioning fails, you can always use manual commands:
 ```bash
-python3 version.py patch  # or minor, major, epoch
+python3 utils/semver.py tag patch  # or minor, major, epoch
 ```

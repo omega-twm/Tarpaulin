@@ -39,11 +39,11 @@ jobs:
         fi
         
         # Run analysis
-        bump_type=$(python3 utils/ci_version.py analyze 2>/dev/null | grep "Recommended version bump:" | awk '{print $4}')
+        bump_type=$(python3 utils/semver.py analyze 2>/dev/null | grep "Recommended version bump:" | awk '{print $4}')
         
         if [ "$bump_type" != "none" ] && [ -n "$bump_type" ]; then
           # Calculate what the new version would be
-          current_version=$(python3 utils/dynamic_version.py)
+          current_version=$(python3 utils/semver.py version | head -1 | awk '{print $3}')
           echo "Current version: $current_version"
           echo "Bump type: $bump_type"
           
@@ -80,8 +80,8 @@ jobs:
       run: |
         echo "Creating version tag for: ${{ needs.analyze-commits.outputs.bump-type }}"
         
-        # Use the tag-only approach
-        python3 utils/ci_version.py tag-only
+        # Use the consolidated semver script
+        python3 utils/semver.py auto
         
         # Push the tag
         git push origin --tags
@@ -124,4 +124,4 @@ jobs:
         # Show what version bump this PR would create
         echo ""
         echo "📊 Version Impact Analysis:"
-        python3 utils/ci_version.py analyze
+        python3 utils/semver.py analyze

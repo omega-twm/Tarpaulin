@@ -1,44 +1,38 @@
 # Utils Directory - Versioning Scripts
 
-This directory contains all the automated semantic versioning utilities.
+This directory contains the automated semantic versioning utilities.
 
 ## Scripts:
 
-### `dynamic_version.py`
-- **Purpose**: Get current version from git tags dynamically
-- **Usage**: `python3 utils/dynamic_version.py`
-- **Returns**: Current version (e.g., "1.1.0" or "1.1.0.dev3" if ahead)
-
-### `ci_version.py` 
-- **Purpose**: CI-friendly version management (tag-only)
+### `semver.py` - **All-in-One Semantic Versioning Tool**
+- **Purpose**: Complete conventional commits & semantic versioning solution
 - **Usage**: 
-  - `python3 utils/ci_version.py analyze` - Analyze commits
-  - `python3 utils/ci_version.py tag-only` - Create version tag
-- **Note**: Only creates tags, never modifies files
+  - `python3 utils/semver.py version` - Show current version & epoch breakdown
+  - `python3 utils/semver.py analyze` - Analyze commits since last tag
+  - `python3 utils/semver.py tag [patch|minor|major|epoch]` - Create version tag
+  - `python3 utils/semver.py auto` - Auto-create tag based on commits
+- **Features**: 
+  - ✅ Conventional commit parsing
+  - ✅ Epoch-based versioning
+  - ✅ Tag-only approach (no file modifications)
+  - ✅ Development version detection
 
-### `conventional_commits.py`
-- **Purpose**: Parse conventional commits and calculate version bumps
-- **Usage**: 
-  - `python3 utils/conventional_commits.py analyze` - Show analysis
-  - `python3 utils/conventional_commits.py auto` - Auto-bump (legacy)
-- **Note**: Contains the core logic for conventional commit parsing
-
-### `version.py`
-- **Purpose**: Legacy version management (now tag-only)
-- **Usage**: 
-  - `python3 utils/version.py show` - Show version info
-  - `python3 utils/version.py patch|minor|major|epoch` - Create tags
-- **Note**: Now creates tags instead of modifying files
+### `setup_conventional_commits.sh`
+- **Purpose**: Setup script for the entire system
+- **Usage**: `bash utils/setup_conventional_commits.sh` (from project root)
+- **What it does**: Installs git hooks, makes scripts executable, shows usage
 
 ## Integration:
 
-- **GitHub Actions**: Uses `ci_version.py` for clean tag-only automation
-- **Git Hooks**: Uses local scripts for immediate tag creation feedback
-- **Manual Use**: All scripts can be run manually for testing/debugging
+- **GitHub Actions**: Uses `semver.py auto` for clean tag-only automation
+- **Git Hooks**: Uses `semver.py auto` for immediate local feedback
+- **Manual Use**: All commands available for testing/debugging
 
-## Benefits:
+## Benefits of Consolidation:
 
+✅ **Single script** - Everything in one place  
+✅ **No complex imports** - Self-contained  
+✅ **Simpler maintenance** - One file to update  
+✅ **Clear interface** - All commands in one tool  
 ✅ **Clean git history** - No automated commits  
-✅ **No file conflicts** - CI never modifies source files  
-✅ **Dynamic versioning** - Version comes from git tags  
-✅ **Organized structure** - All utilities in one place
+✅ **No file conflicts** - CI never modifies source files
