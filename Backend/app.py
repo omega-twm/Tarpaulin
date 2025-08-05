@@ -1,5 +1,6 @@
 import os
 import re
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -16,7 +17,7 @@ from langchain_openai import ChatOpenAI
 from langchain.callbacks.tracers import LangChainTracer
 from langchain.callbacks.manager import CallbackManager
 
-from canvas_service import get_user_courses, get_course_assignments, get_course_files, fetch_student_context
+from .canvas_service import get_user_courses, get_course_assignments, get_course_files, fetch_student_context
 
 load_dotenv()
 os.environ["LANGCHAIN_TRACING_V2"] = "true"
@@ -24,7 +25,19 @@ os.environ["LANGCHAIN_TRACING_V2"] = "true"
 tracer = LangChainTracer()
 cb_manager = CallbackManager([tracer])
 
-app = FastAPI(title="Canvas RAG Service")
+# Global variables
+documents = []
+vectordb = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await startup_event()
+    yield
+    # Shutdown (if needed)
+    print_box("Application shutting down...", "SHUTDOWN")
+
+app = FastAPI(title="Canvas RAG Service", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -32,9 +45,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-documents = []
-vectordb = None
 
 class QARequest(BaseModel):
     query: str
@@ -119,7 +129,6 @@ def filter_actual_courses(courses):
     
     return filtered_courses
 
-@app.on_event("startup")
 async def startup_event():
     global documents, vectordb
     try:
@@ -529,3 +538,11 @@ async def proxy_pdf(course_id: int, file_id: int):
             file_resp.aiter_bytes(),
             media_type="application/pdf"
         )
+
+def main():
+    """Main entry point for running the FastAPI backend"""
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+if __name__ == "__main__":
+    main()
