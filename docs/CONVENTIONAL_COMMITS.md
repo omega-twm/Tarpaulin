@@ -6,7 +6,7 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/) t
 
 1. **Setup the system:**
    ```bash
-   ./setup_conventional_commits.sh
+   bash utils/setup_conventional_commits.sh
    ```
 
 2. **Configure git to use the commit template:**
@@ -66,11 +66,10 @@ BREAKING CHANGE: The CLI now uses different command syntax"
 The post-commit hook automatically:
 1. Analyzes commits since last version tag
 2. Determines appropriate version bump
-3. Updates `pyproject.toml` with new version  
-4. Creates git tag
-5. Shows push command for the tag
+3. **Creates git tag only** (no file modifications)
+4. Shows command to push the tag
 
-**Note**: Version bump commits (starting with `chore: bump version`) are automatically skipped to prevent infinite loops.
+**Note**: No files are modified, keeping git history clean.
 
 ### CI/CD Automation (GitHub Actions)
 
@@ -79,49 +78,51 @@ The post-commit hook automatically:
 - Shows what version bump would be applied
 
 **On Push to Main:**
-- Skips version bump commits to prevent infinite loops
-- Analyzes all commits since last version
-- Automatically bumps version if needed
-- Commits version changes back to main with `[skip ci]`
-- Pushes new git tag
+- Analyzes all commits since last version tag
+- Creates version tags automatically if needed
+- Pushes new git tags to repository
+- **No file modifications or automated commits**
 
 ## Manual Commands
 
 ### Analyze Commits
 ```bash
-python3 conventional_commits.py analyze
+python3 utils/ci_version.py analyze
 ```
 Shows commits since last version and recommended bump.
 
-### Auto-bump Version  
+### Create Version Tag
 ```bash
-python3 conventional_commits.py auto
+python3 utils/ci_version.py tag-only
 ```
-Automatically applies the calculated version bump.
-
-### Manual Version Bump
-```bash
-python3 version.py patch   # 1.0.0 → 1.0.1
-python3 version.py minor   # 1.0.0 → 1.1.0  
-python3 version.py major   # 1.0.0 → 2.0.0
-python3 version.py epoch   # 1.0.0 → 1000.0.0
-```
+Creates a git tag without modifying any files.
 
 ### Check Current Version
 ```bash
-python3 version.py show
+python3 utils/dynamic_version.py  # From git tags
+python3 utils/version.py show     # Legacy method
 ```
 
-## Epoch Versioning Integration
+### Manual Version Bump (Legacy)
+```bash
+python3 utils/version.py patch   # 1.0.0 → 1.0.1 (creates tag only)
+python3 utils/version.py minor   # 1.0.0 → 1.1.0 (creates tag only)  
+python3 utils/version.py major   # 1.0.0 → 2.0.0 (creates tag only)
+python3 utils/version.py epoch   # 1.0.0 → 1000.0.0 (creates tag only)
+```
 
-This system maintains your existing epoch-based versioning:
+## Versioning System
 
-- **Patch**: `1.0.0` → `1.0.1`
-- **Minor**: `1.0.0` → `1.1.0` 
-- **Major**: `1.0.0` → `2.0.0`
-- **Epoch**: `1.0.0` → `1000.0.0`
+This project uses **tag-only semantic versioning** - version numbers come from git tags, not files.
 
-The epoch component (`1000.x.y`) represents major architectural changes or complete rewrites.
+### Current Approach:
+- **Version source**: Git tags (e.g., `v1.2.0`)
+- **File modifications**: None (clean git history)
+- **CI behavior**: Creates tags only, no commits
+- **Dynamic versioning**: `python3 utils/dynamic_version.py`
+
+### Legacy File-Based Method:
+The old approach that modified `pyproject.toml` has been replaced with this cleaner tag-only system.
 
 ## Examples
 
@@ -151,11 +152,14 @@ git commit -m "epoch: migrate to new AI framework"
 
 ## Configuration Files
 
-- `conventional_commits.py` - Main analysis and automation logic
-- `hooks/post-commit` - Git hook for local automation
+- `utils/ci_version.py` - CI-friendly tag-only versioning logic
+- `utils/dynamic_version.py` - Get version from git tags dynamically  
+- `utils/conventional_commits.py` - Main analysis and automation logic
+- `utils/version.py` - Legacy version management (now tag-only)
+- `hooks/post-commit` - Git hook for local tag-only automation
 - `.github/workflows/semantic-versioning.yml` - GitHub Actions workflow
 - `.gitmessage` - Commit message template
-- `setup_conventional_commits.sh` - Setup script
+- `utils/setup_conventional_commits.sh` - Setup script
 
 ## Best Practices
 
