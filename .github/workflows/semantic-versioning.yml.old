@@ -1,8 +1,11 @@
-name: Tag-Only Semantic Versioning
+name: Automated Semantic Versioning
 
 on:
   push:
     branches: [ main ]
+    # Skip version bump commits to prevent infinite loops
+    paths-ignore:
+      - 'pyproject.toml'
   pull_request:
     branches: [ main ]
 
@@ -12,12 +15,11 @@ jobs:
     outputs:
       should-bump: ${{ steps.analyze.outputs.should-bump }}
       bump-type: ${{ steps.analyze.outputs.bump-type }}
-      new-version: ${{ steps.analyze.outputs.new-version }}
     
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 0  # Fetch full history for proper commit analysis
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -29,33 +31,31 @@ jobs:
       run: |
         echo "Analyzing conventional commits..."
         
-        # Check if the latest commit is a merge or already tagged
+        # Check if the latest commit is a version bump (skip if so)
         latest_commit=$(git log -1 --pretty=format:"%s")
-        if git tag --points-at HEAD | grep -q "v"; then
-          echo "Skipping: Current commit already has a version tag"
+        if [[ "$latest_commit" =~ \[skip[[:space:]]ci\] ]] || [[ "$latest_commit" =~ ^chore:[[:space:]]bump[[:space:]]version ]]; then
+          echo "Skipping: Version bump commit detected"
           echo "should-bump=false" >> $GITHUB_OUTPUT
           echo "bump-type=none" >> $GITHUB_OUTPUT
           exit 0
         fi
         
-        # Run analysis
-        bump_type=$(python3 utils/ci_version.py analyze 2>/dev/null | grep "Recommended version bump:" | awk '{print $4}')
+        # Run analysis and capture output
+        output=$(python3 conventional_commits.py analyze)
+        echo "$output"
         
-        if [ "$bump_type" != "none" ] && [ -n "$bump_type" ]; then
-          # Calculate what the new version would be
-          current_version=$(python3 utils/dynamic_version.py)
-          echo "Current version: $current_version"
-          echo "Bump type: $bump_type"
-          
+        # Extract bump type
+        bump_type=$(echo "$output" | grep "Recommended version bump:" | awk '{print $4}')
+        
+        if [ "$bump_type" != "none" ]; then
           echo "should-bump=true" >> $GITHUB_OUTPUT
           echo "bump-type=$bump_type" >> $GITHUB_OUTPUT
-          echo "new-version=will-be-calculated" >> $GITHUB_OUTPUT
         else
           echo "should-bump=false" >> $GITHUB_OUTPUT
           echo "bump-type=none" >> $GITHUB_OUTPUT
         fi
 
-  create-tag:
+  auto-version:
     needs: analyze-commits
     runs-on: ubuntu-latest
     if: needs.analyze-commits.outputs.should-bump == 'true' && github.event_name == 'push'
@@ -76,17 +76,31 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
     
-    - name: Create version tag
+    - name: Auto-bump version
       run: |
-        echo "Creating version tag for: ${{ needs.analyze-commits.outputs.bump-type }}"
+        echo "Auto-bumping version: ${{ needs.analyze-commits.outputs.bump-type }}"
+        python3 conventional_commits.py auto
+    
+    - name: Commit version changes
+      run: |
+        # Check if there are changes to commit
+        if git diff --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
         
-        # Use the tag-only approach
-        python3 utils/ci_version.py tag-only
+        # Get the new version
+        new_version=$(python3 -c "from version import get_current_version; print(get_current_version())")
         
-        # Push the tag
+        echo "Version bumped to: $new_version"
+        echo "Changes made:"
+        git diff pyproject.toml
+        
+        # Commit and push the version bump
+        git add pyproject.toml
+        git commit -m "chore: bump version to $new_version [skip ci]"
         git push origin --tags
-        
-        echo "✅ Version tag created and pushed!"
+        git push origin main
 
   validate-commits:
     runs-on: ubuntu-latest
@@ -106,22 +120,20 @@ jobs:
       run: |
         echo "Validating conventional commits in PR..."
         
+        # Get commits in this PR
         base_sha="${{ github.event.pull_request.base.sha }}"
         head_sha="${{ github.event.pull_request.head.sha }}"
         
         commits=$(git log --pretty=format:"%s" "$base_sha..$head_sha")
         
+        # Simple validation - check if commits follow conventional format
         echo "$commits" | while IFS= read -r commit; do
           if [[ "$commit" =~ ^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|epoch)(\(.+\))?!?:.+ ]]; then
             echo "✅ Valid: $commit"
           else
             echo "❌ Invalid conventional commit: $commit"
             echo "Please use format: type(scope): description"
+            echo "Types: feat, fix, docs, style, refactor, perf, test, chore, build, ci, epoch"
             exit 1
           fi
         done
-        
-        # Show what version bump this PR would create
-        echo ""
-        echo "📊 Version Impact Analysis:"
-        python3 utils/ci_version.py analyze
