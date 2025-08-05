@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Environment variables
+.env
+.env.*
+
+# ChromaDB database
+.chromadb/
+
+# SQLite DBs (optional — if using local DB and don't want it versioned)
+*.sqlite3
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
