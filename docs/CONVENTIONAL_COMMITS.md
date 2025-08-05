@@ -35,14 +35,14 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/) t
 |------|-------------|--------------|---------|
 | `feat` | New feature | **Minor** | `feat: add Canvas integration` |
 | `fix` | Bug fix | **Patch** | `fix: resolve API timeout` |
-| `docs` | Documentation | **Patch** | `docs: update README` |
-| `style` | Code style/formatting | **Patch** | `style: fix indentation` |
-| `refactor` | Code refactoring | **Patch** | `refactor: simplify query logic` |
 | `perf` | Performance improvement | **Patch** | `perf: optimize embeddings` |
-| `test` | Test changes | **Patch** | `test: add unit tests` |
-| `chore` | Maintenance tasks | **Patch** | `chore: update dependencies` |
-| `build` | Build system changes | **Patch** | `build: update pyproject.toml` |
-| `ci` | CI/CD changes | **Patch** | `ci: add GitHub Actions` |
+| `docs` | Documentation | **None** | `docs: update README` |
+| `style` | Code style/formatting | **None** | `style: fix indentation` |
+| `refactor` | Code refactoring | **None** | `refactor: simplify query logic` |
+| `test` | Test changes | **None** | `test: add unit tests` |
+| `chore` | Maintenance tasks | **None** | `chore: update dependencies` |
+| `build` | Build system changes | **None** | `build: update pyproject.toml` |
+| `ci` | CI/CD changes | **None** | `ci: add GitHub Actions` |
 | `epoch` | Major architectural changes | **Epoch** | `epoch: complete rewrite` |
 
 ### Breaking Changes (Major Version Bump)
@@ -70,6 +70,8 @@ The post-commit hook automatically:
 4. Creates git tag
 5. Shows push command for the tag
 
+**Note**: Version bump commits (starting with `chore: bump version`) are automatically skipped to prevent infinite loops.
+
 ### CI/CD Automation (GitHub Actions)
 
 **On Pull Requests:**
@@ -77,9 +79,10 @@ The post-commit hook automatically:
 - Shows what version bump would be applied
 
 **On Push to Main:**
+- Skips version bump commits to prevent infinite loops
 - Analyzes all commits since last version
 - Automatically bumps version if needed
-- Commits version changes back to main
+- Commits version changes back to main with `[skip ci]`
 - Pushes new git tag
 
 ## Manual Commands

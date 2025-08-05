@@ -95,19 +95,20 @@ class ConventionalCommitParser:
 class VersionBumpCalculator:
     """Calculate version bump based on conventional commits"""
     
-    # Mapping of commit types to bump types
+    # Mapping of commit types to bump types (following semantic versioning standard)
     TYPE_TO_BUMP = {
-        'fix': BumpType.PATCH,
-        'feat': BumpType.MINOR,
-        'perf': BumpType.PATCH,
-        'refactor': BumpType.PATCH,
-        'style': BumpType.PATCH,
-        'test': BumpType.PATCH,
-        'docs': BumpType.PATCH,
-        'chore': BumpType.PATCH,
-        'build': BumpType.PATCH,
-        'ci': BumpType.PATCH,
-        'revert': BumpType.PATCH,
+        'fix': BumpType.PATCH,      # Bug fixes
+        'feat': BumpType.MINOR,     # New features
+        'perf': BumpType.PATCH,     # Performance improvements (considered bug fixes)
+        # The following types do NOT bump version by default (no functional changes)
+        'refactor': BumpType.NONE,  # Code refactoring
+        'style': BumpType.NONE,     # Code style/formatting
+        'test': BumpType.NONE,      # Test changes
+        'docs': BumpType.NONE,      # Documentation changes
+        'chore': BumpType.NONE,     # Maintenance tasks
+        'build': BumpType.NONE,     # Build system changes
+        'ci': BumpType.NONE,        # CI/CD changes
+        'revert': BumpType.PATCH,   # Reverts (usually fix something)
     }
     
     # Types that trigger epoch bumps (major architectural changes)

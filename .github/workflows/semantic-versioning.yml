@@ -3,6 +3,9 @@ name: Automated Semantic Versioning
 on:
   push:
     branches: [ main ]
+    # Skip version bump commits to prevent infinite loops
+    paths-ignore:
+      - 'pyproject.toml'
   pull_request:
     branches: [ main ]
 
@@ -27,6 +30,15 @@ jobs:
       id: analyze
       run: |
         echo "Analyzing conventional commits..."
+        
+        # Check if the latest commit is a version bump (skip if so)
+        latest_commit=$(git log -1 --pretty=format:"%s")
+        if [[ "$latest_commit" =~ \[skip[[:space:]]ci\] ]] || [[ "$latest_commit" =~ ^chore:[[:space:]]bump[[:space:]]version ]]; then
+          echo "Skipping: Version bump commit detected"
+          echo "should-bump=false" >> $GITHUB_OUTPUT
+          echo "bump-type=none" >> $GITHUB_OUTPUT
+          exit 0
+        fi
         
         # Run analysis and capture output
         output=$(python3 conventional_commits.py analyze)
@@ -116,12 +128,12 @@ jobs:
         
         # Simple validation - check if commits follow conventional format
         echo "$commits" | while IFS= read -r commit; do
-          if [[ "$commit" =~ ^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\(.+\))?!?:.+ ]]; then
+          if [[ "$commit" =~ ^(feat|fix|docs|style|refactor|perf|test|chore|build|ci|epoch)(\(.+\))?!?:.+ ]]; then
             echo "✅ Valid: $commit"
           else
             echo "❌ Invalid conventional commit: $commit"
             echo "Please use format: type(scope): description"
-            echo "Types: feat, fix, docs, style, refactor, perf, test, chore, build, ci"
+            echo "Types: feat, fix, docs, style, refactor, perf, test, chore, build, ci, epoch"
             exit 1
           fi
         done
