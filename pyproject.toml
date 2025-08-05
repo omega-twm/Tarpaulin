@@ -19,5 +19,20 @@ dependencies = [
     "uvicorn[standard]>=0.35.0",
 ]
 
+[project.scripts]
+canvas = "cli:main"
+tarpaulin-backend = "Backend.app:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["Backend*", "utils*"]
+exclude = ["hooks*", "docs*", "__pycache__*", "*.egg-info*"]
+
+[tool.setuptools]
+py-modules = ["cli"]
+
 # Version is now managed by git tags only
-# Use: python dynamic_version.py to get current version
+# Use: python version.py to get current version
