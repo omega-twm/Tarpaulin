@@ -1,5 +1,4 @@
-# Conventional Commit Message Template
-# 
+# Write your commit message above this line
 # Format: <type>[optional scope]: <description>
 # 
 # [optional body]
@@ -9,14 +8,15 @@
 # Types:
 #   feat:     A new feature (minor version bump)
 #   fix:      A bug fix (patch version bump)
-#   docs:     Documentation only changes (patch version bump)
-#   style:    Changes that do not affect code meaning (patch version bump)
-#   refactor: A code change that neither fixes a bug nor adds a feature (patch version bump)
 #   perf:     A code change that improves performance (patch version bump)
-#   test:     Adding missing tests or correcting existing tests (patch version bump)
-#   chore:    Changes to build process or auxiliary tools (patch version bump)
-#   build:    Changes that affect the build system (patch version bump)
-#   ci:       Changes to CI configuration files and scripts (patch version bump)
+#   revert:   Revert a previous commit (patch version bump)
+#   docs:     Documentation only changes (no version bump)
+#   style:    Changes that do not affect code meaning (no version bump)
+#   refactor: A code change that neither fixes a bug nor adds a feature (no version bump)
+#   test:     Adding missing tests or correcting existing tests (no version bump)
+#   chore:    Changes to build process or auxiliary tools (no version bump)
+#   build:    Changes that affect the build system (no version bump)
+#   ci:       Changes to CI configuration files and scripts (no version bump)
 #   epoch:    Major architectural changes (epoch version bump)
 #
 # Breaking Changes:
