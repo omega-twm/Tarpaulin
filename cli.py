@@ -321,6 +321,34 @@ class CanvasCLI:
         
         self._print_box("\n".join(details_lines), "DOCUMENT DETAILS")
 
+    def test(self) -> None:
+        """Load mock data for testing RAG functionality"""
+        self._print_box("Loading mock test data...", "TEST MODE")
+        
+        start_time = time.time()
+        result = self._make_request("POST", "/test/load-mock-data")
+        elapsed = time.time() - start_time
+        
+        success_msg = f"{result['message']}\n"
+        success_msg += f"Courses: {result['courses']}\n"
+        success_msg += f"Assignments: {result['assignments']}\n" 
+        success_msg += f"Files: {result['files']}\n"
+        success_msg += f"Total documents: {result['documents_loaded']}\n"
+        success_msg += f"Completed in {elapsed:.1f} seconds"
+        
+        self._print_box(success_msg, "TEST DATA LOADED")
+        
+        # Show example queries
+        examples = [
+            'canvas ask "What courses do I have?"',
+            'canvas ask "What assignments are due?"',
+            'canvas ask "Tell me about machine learning"',
+            'canvas ask "What files are available?"'
+        ]
+        
+        example_text = "Try these test queries:\n" + "\n".join(examples)
+        self._print_box(example_text, "EXAMPLE QUERIES")
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -333,6 +361,7 @@ Examples:
   canvas health
   canvas refresh
   canvas context
+  canvas test
         """
     )
     
@@ -360,6 +389,9 @@ Examples:
     # Debug command
     subparsers.add_parser("debug", help="Show debug information about indexed documents")
     
+    # Test command
+    subparsers.add_parser("test", help="Load mock data for testing RAG functionality")
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -380,6 +412,8 @@ Examples:
             cli.context()
         elif args.command == "debug":
             cli.debug()
+        elif args.command == "test":
+            cli.test()
         else:
             parser.print_help()
             sys.exit(1)

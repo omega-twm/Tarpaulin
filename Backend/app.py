@@ -356,6 +356,161 @@ async def get_context():
 async def debug_docs():
     return [doc.metadata for doc in documents]
 
+@app.post("/test/load-mock-data")
+async def load_mock_data():
+    """Load mock data for testing RAG functionality"""
+    global documents, vectordb
+    try:
+        print_box("Loading mock test data...", "TEST MODE")
+        
+        # Clear existing documents
+        documents.clear()
+        
+        # Create mock course data
+        mock_courses = [
+            {
+                "id": 999001,
+                "name": "Advanced Machine Learning",
+                "course_code": "CS-ML-501"
+            },
+            {
+                "id": 999002, 
+                "name": "Database Systems",
+                "course_code": "CS-DB-301"
+            }
+        ]
+        
+        # Add mock course documents
+        for course in mock_courses:
+            cid = course["id"]
+            cname = course["name"]
+            ccode = course["course_code"]
+            documents.append(Document(
+                page_content=f"Course: {cname} ({ccode}) - This is a comprehensive course covering advanced topics.",
+                metadata={"type": "course", "course_id": cid}
+            ))
+        
+        # Add mock assignments
+        mock_assignments = [
+            {
+                "course_id": 999001,
+                "name": "Neural Network Implementation",
+                "description": "Implement a neural network from scratch using Python. Focus on backpropagation and gradient descent algorithms."
+            },
+            {
+                "course_id": 999001,
+                "name": "Research Paper Review",
+                "description": "Review and analyze a recent machine learning research paper. Submit a 5-page analysis."
+            },
+            {
+                "course_id": 999002,
+                "name": "Database Design Project",
+                "description": "Design and implement a relational database for a library management system. Include normalization and indexing."
+            }
+        ]
+        
+        for assignment in mock_assignments:
+            content = f"{assignment['name']}\n{assignment['description']}"
+            documents.append(Document(
+                page_content=content,
+                metadata={
+                    "type": "assignment", 
+                    "course_id": assignment["course_id"], 
+                    "assignment_id": f"mock_{assignment['course_id']}"
+                }
+            ))
+        
+        # Add mock files
+        mock_files = [
+            {
+                "course_id": 999001,
+                "display_name": "Lecture 1 - Introduction to Deep Learning.pdf",
+                "size": 2048576
+            },
+            {
+                "course_id": 999001,
+                "display_name": "Assignment Guidelines.docx", 
+                "size": 51200
+            },
+            {
+                "course_id": 999002,
+                "display_name": "Database Schema Examples.sql",
+                "size": 15360
+            }
+        ]
+        
+        for file in mock_files:
+            file_text = f"{file['display_name']} ({file['size']} bytes) - Course material for learning"
+            documents.append(Document(
+                page_content=file_text,
+                metadata={
+                    "type": "file",
+                    "course_id": file["course_id"],
+                    "file_id": f"mock_{file['course_id']}_file"
+                }
+            ))
+        
+        doc_summary = f"Mock data loaded successfully\nTotal documents: {len(documents)}"
+        print_box(doc_summary, "MOCK DATA LOADED")
+        
+        # Create vector database with mock data
+        persist_dir = os.getenv("CHROMA_DB_DIR", "./chroma_db_test")
+        
+        # Initialize embeddings
+        if os.getenv("OPENAI_BASE_URL") and "groq" in os.getenv("OPENAI_BASE_URL").lower():
+            print_box("Using local embeddings for test data...", "EMBEDDINGS")
+            from langchain_huggingface import HuggingFaceEmbeddings
+            embeddings = HuggingFaceEmbeddings(
+                model_name="sentence-transformers/all-MiniLM-L6-v2",
+                model_kwargs={'device': 'cpu'}
+            )
+        else:
+            embeddings_kwargs = {"api_key": os.getenv("OPENAI_API_KEY")}
+            if os.getenv("OPENAI_BASE_URL"):
+                embeddings_kwargs["base_url"] = os.getenv("OPENAI_BASE_URL")
+            embeddings = OpenAIEmbeddings(**embeddings_kwargs)
+        
+        # Create fresh vector database for testing
+        print_box("Creating test vector database...", "VECTOR DB")
+        
+        # Update the main vectordb instance for QA functionality
+        vectordb = Chroma(
+            persist_directory=persist_dir,
+            embedding_function=embeddings
+        )
+        
+        # Clear any existing test data and add new documents
+        try:
+            # Get all existing ids and delete them
+            existing_docs = vectordb.get()
+            if existing_docs['ids']:
+                vectordb.delete(ids=existing_docs['ids'])
+        except Exception:
+            # If deletion fails, recreate the collection
+            vectordb._collection.delete()
+            vectordb = Chroma(
+                persist_directory=persist_dir,
+                embedding_function=embeddings
+            )
+        
+        vectordb.add_documents(documents)
+        
+        success_msg = f"Test database created successfully\nDocuments embedded: {len(documents)}\nRAG system ready for testing"
+        print_box(success_msg, "TEST READY")
+        
+        return {
+            "message": "Mock data loaded successfully",
+            "documents_loaded": len(documents),
+            "courses": len(mock_courses),
+            "assignments": len(mock_assignments),
+            "files": len(mock_files)
+        }
+        
+    except Exception as e:
+        error_msg = f"Failed to load mock data: {str(e)}"
+        print_box(error_msg, "TEST ERROR")
+        raise HTTPException(status_code=500, detail=error_msg)
+
 @app.get("/proxy/pdf/{course_id}/{file_id}")
 async def proxy_pdf(course_id: int, file_id: int):
     url = f"https://{os.getenv('CANVAS_DOMAIN')}/api/v1/courses/{course_id}/files/{file_id}"

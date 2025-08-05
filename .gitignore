@@ -14,6 +14,7 @@ venv/
 
 # ChromaDB database
 .chromadb/
+.chromadb_test/
 
 # SQLite DBs (optional — if using local DB and don't want it versioned)
 *.sqlite3
