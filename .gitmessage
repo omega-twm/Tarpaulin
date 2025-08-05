@@ -1,0 +1,36 @@
+# Conventional Commit Message Template
+# 
+# Format: <type>[optional scope]: <description>
+# 
+# [optional body]
+# 
+# [optional footer(s)]
+#
+# Types:
+#   feat:     A new feature (minor version bump)
+#   fix:      A bug fix (patch version bump)
+#   docs:     Documentation only changes (patch version bump)
+#   style:    Changes that do not affect code meaning (patch version bump)
+#   refactor: A code change that neither fixes a bug nor adds a feature (patch version bump)
+#   perf:     A code change that improves performance (patch version bump)
+#   test:     Adding missing tests or correcting existing tests (patch version bump)
+#   chore:    Changes to build process or auxiliary tools (patch version bump)
+#   build:    Changes that affect the build system (patch version bump)
+#   ci:       Changes to CI configuration files and scripts (patch version bump)
+#   epoch:    Major architectural changes (epoch version bump)
+#
+# Breaking Changes:
+#   - Add '!' after the type: feat!: breaking change
+#   - Or include 'BREAKING CHANGE:' in the footer
+#
+# Examples:
+#   feat: add new AI query endpoint
+#   fix: resolve Canvas API timeout issue
+#   feat!: change CLI interface completely
+#   docs: update README with new setup instructions
+#   chore: update dependencies to latest versions
+#   perf(cli): optimize query response time
+#   test: add unit tests for version management
+#
+# Current version info:
+# Run: python3 version.py show

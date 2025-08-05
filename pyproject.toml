@@ -1,7 +1,7 @@
 [project]
-name = "canvasaidashboard"
-version = "0.1.0"
-description = "Add your description here"
+name = "tarpaulin"
+version = "1.0.0"
+description = "Canvas AI Dashboard - Epoch SemVer (E0.M1.0.0)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

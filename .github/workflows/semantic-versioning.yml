@@ -1,0 +1,127 @@
+name: Automated Semantic Versioning
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  analyze-commits:
+    runs-on: ubuntu-latest
+    outputs:
+      should-bump: ${{ steps.analyze.outputs.should-bump }}
+      bump-type: ${{ steps.analyze.outputs.bump-type }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for proper commit analysis
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Analyze commits
+      id: analyze
+      run: |
+        echo "Analyzing conventional commits..."
+        
+        # Run analysis and capture output
+        output=$(python3 conventional_commits.py analyze)
+        echo "$output"
+        
+        # Extract bump type
+        bump_type=$(echo "$output" | grep "Recommended version bump:" | awk '{print $4}')
+        
+        if [ "$bump_type" != "none" ]; then
+          echo "should-bump=true" >> $GITHUB_OUTPUT
+          echo "bump-type=$bump_type" >> $GITHUB_OUTPUT
+        else
+          echo "should-bump=false" >> $GITHUB_OUTPUT
+          echo "bump-type=none" >> $GITHUB_OUTPUT
+        fi
+
+  auto-version:
+    needs: analyze-commits
+    runs-on: ubuntu-latest
+    if: needs.analyze-commits.outputs.should-bump == 'true' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Auto-bump version
+      run: |
+        echo "Auto-bumping version: ${{ needs.analyze-commits.outputs.bump-type }}"
+        python3 conventional_commits.py auto
+    
+    - name: Commit version changes
+      run: |
+        # Check if there are changes to commit
+        if git diff --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        
+        # Get the new version
+        new_version=$(python3 -c "from version import get_current_version; print(get_current_version())")
+        
+        # Commit the version bump
+        git add pyproject.toml
+        git commit -m "chore: bump version to $new_version [skip ci]"
+        
+        # Push the tag (version.py already created it)
+        git push origin --tags
+        
+        # Push the version commit
+        git push origin main
+
+  validate-commits:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Validate conventional commits
+      run: |
+        echo "Validating conventional commits in PR..."
+        
+        # Get commits in this PR
+        base_sha="${{ github.event.pull_request.base.sha }}"
+        head_sha="${{ github.event.pull_request.head.sha }}"
+        
+        commits=$(git log --pretty=format:"%s" "$base_sha..$head_sha")
+        
+        # Simple validation - check if commits follow conventional format
+        echo "$commits" | while IFS= read -r commit; do
+          if [[ "$commit" =~ ^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\(.+\))?!?:.+ ]]; then
+            echo "✅ Valid: $commit"
+          else
+            echo "❌ Invalid conventional commit: $commit"
+            echo "Please use format: type(scope): description"
+            echo "Types: feat, fix, docs, style, refactor, perf, test, chore, build, ci"
+            exit 1
+          fi
+        done
