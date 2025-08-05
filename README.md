@@ -1,122 +1,218 @@
-# Canvas RAG Dashboard
+# Canvas AI Dashboard
 
-An AI-powered “retrieval-augmented generation” (RAG) dashboard for Canvas LMS.  
-Students can chat naturally about their courses, assignments, and profile—powered by a Python FastAPI backend that fetches Canvas data and a Next.js frontend that renders a conversational UI.
+An AI-powered "retrieval-augmented generation" (RAG) system for Canvas LMS with a professional CLI interface.  
+Students can query their Canvas data naturally using a command-line tool powered by a Python FastAPI backend that fetches Canvas data and uses free AI services.
+
+> **Note**: This project is based on the original Canvas RAG Dashboard. We've transformed it into a CLI-focused tool with enhanced filtering, free AI integration (Groq), and professional ASCII styling.
 
 ---
 
-## 🚀 Architecture
 
-canvas-rag-dashboard/
-├── frontend/                      # Next.js React app
-└── backend/                       # Python FastAPI microservice
+- **CLI Interface (cli.py)**  
+  - Command-line tool with minimalist styling
+  - Commands: `ask`, `health`, `context`, `refresh`, `debug`, `test`
+  - Box formatting and text wrapping
 
-- **frontend/**  
-  - Built with Next.js + React + Tailwind  
-  - Renders a chat UI (`CanvasChat.tsx`) that sends questions to the backend  
-
-- **backend/**  
+- **Backend/**  
   - FastAPI service in Python  
-  - `canvas_service.py` – wraps Canvas API calls (profile, courses, assignments)  
-  - `app.py` – exposes `/context` and `/qa` endpoints  
-  - Uses LangChain, Chroma (or other vector store), and OpenAI for embeddings & QA  
+  - `canvas_service.py` – wraps Canvas API calls (courses, assignments, files)  
+  - `app.py` – exposes `/qa`, `/health`, `/context` endpoints with ASCII logging
+  - Uses LangChain, ChromaDB, and Groq API for free AI processing
+  - Smart course filtering to exclude information hubs
+---
+
+## Key Features
+
+- **Free AI**: Uses Groq API (llama-3.1-8b-instant) instead of paid OpenAI
+- **Local Embeddings**: HuggingFace sentence-transformers for vector search
+- **Professional CLI**: ASCII art boxes and clean formatting
+- **Smart Filtering**: Automatically excludes Canvas information hubs
+- **Performance**: Caching to avoid re-running embeddings on startup
+- **Test Mode**: Mock data for testing RAG functionality
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
-- **Node.js** ≥ 16  
 - **Python** ≥ 3.9  
+- **uv** (Python package manager) or **pip**
 - Canvas API token and domain  
-- OpenAI API key  
+- **Groq API key** (free tier available)
 
 ---
 
-## ⚙️ Setup
+## Setup
 
-### 1. Clone the repo
+### 1. Clone and navigate
 
 ```bash
-git clone https://github.com/your-org/canvas-rag-dashboard.git
-cd canvas-rag-dashboard
+git clone <your-repo-url>
+cd Tarpaulin
+```
 
-2. Configure environment variables
+### 2. Configure environment variables
 
-Frontend (frontend/.env.local)
+Create `Backend/.env`:
 
-NEXT_PUBLIC_API_BASE=http://localhost:8000
-
-Backend (backend/.env)
-
+```bash
 # Canvas API credentials
-CANVAS_API_TOKEN=
-CANVAS_DOMAIN=
+CANVAS_API_TOKEN=your_canvas_token_here
+CANVAS_DOMAIN=your_institution.instructure.com
 
-# OpenAI API key
-OPENAI_API_KEY=
-# (Optional) FastAPI/Uvicorn settings
-# PORT=8000
-# HOST=0.0.0.0
-# Chroma persistence
-CHROMA_DB_DIR=./.chromadb
+# Groq API (free alternative to OpenAI)
+OPENAI_API_KEY=your_groq_api_key_here
+OPENAI_BASE_URL=https://api.groq.com/openai/v1
 
+# Database persistence
+CHROMA_DB_DIR=./chroma_db
 
+# Optional: LangSmith tracing
 LANGSMITH_TRACING=true
-LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
-LANGSMITH_API_KEY=
-LANGSMITH_PROJECT=
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_API_KEY=your_langsmith_key
+LANGSMITH_PROJECT=CanvasAI
+```
 
-🏃‍♂️ Running Locally
+### 3. Install dependencies
 
-Backend
+```bash
+# Using uv (recommended)
+uv sync
 
-cd backend
-python -m venv .venv
-source .venv/bin/activate       # macOS/Linux
-# .venv\Scripts\activate        # Windows
+# Or using pip
+cd Backend
 pip install -r requirements.txt
-uvicorn app:app --reload       # starts at http://localhost:8000
+```
 
-Frontend
+---
 
-cd frontend
-npm install
-npm run dev                    # starts at http://localhost:3000
+## Running the System
 
-🧰 Usage
-	1.	Open your browser to http://localhost:3000
-	2.	Ask questions like “What assignments do I have due soon?”
-	3.	The frontend sends your query to POST /qa on the Python service, which:
-	•	Fetches your Canvas context (/context)
-	•	Embeds and indexes documents with LangChain & Chroma
-	•	Runs a RetrievalQA chain via OpenAI
-	•	Returns a natural-language answer
+### Start the Backend
 
-📁 Folder Structure
+```bash
+cd Backend
+uvicorn app:app
+```
 
-canvas-rag-dashboard/
-├── frontend/
-│   ├── .env.local
-│   ├── package.json
-│   └── src/
-│       ├── pages/index.tsx
-│       ├── components/CanvasChat.tsx
-│       └── styles/globals.css
-└── backend/
-    ├── .env
-    ├── requirements.txt
-    ├── app.py
-    ├── canvas_service.py
-    └── models/canvas_types.py
+### Use the CLI
 
-🛠️ Contributing
-	1.	Fork the repo
-	2.	Create a feature branch (git checkout -b feature/...)
-	3.	Commit & push
-	4.	Open a Pull Request
+```bash
+# Check system health
+canvas health
 
-Please follow the existing code style and add tests for any new features.
+# View your Canvas context
+canvas context
 
-📄 License
+# Ask questions about your courses
+canvas ask "What courses do I have?"
+canvas ask "What assignments are due this week?"
+canvas ask "Tell me about my machine learning course"
 
-This project is MIT-licensed. See LICENSE for details
+# Load test data (if no real courses available)
+canvas test
+
+# Refresh Canvas data
+canvas refresh
+
+# Debug information
+canvas debug
+```
+
+---
+
+## CLI Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `canvas ask "<question>"` | Ask AI about your Canvas data | `canvas ask "What assignments are due?"` |
+| `canvas health` | Check system status | `canvas health` |
+| `canvas context` | View courses, assignments, files | `canvas context` |
+| `canvas refresh` | Update Canvas data | `canvas refresh` |
+| `canvas test` | Load mock data for testing | `canvas test` |
+| `canvas debug` | Show technical details | `canvas debug` |
+
+---
+
+## Project Structure
+
+```
+CanvasAIDashboard/
+├── cli.py                    # Main CLI interface
+├── setup_cli.sh              # CLI installation script
+├── Backend/
+│   ├── .env                  # Environment configuration
+│   ├── requirements.txt      # Python dependencies
+│   ├── app.py               # FastAPI backend with ASCII logging
+│   └── canvas_service.py    # Canvas API integration
+├── pyproject.toml           # uv configuration
+└── README.md               # This file
+```
+
+---
+
+## CLI Features
+
+- Clean, terminal-friendly output
+- Proper line breaks for long content  
+- Unified design across all commands
+- Clear error messages with helpful suggestions
+- Response time tracking for queries
+
+---
+
+## Technical Details
+
+- **AI Model**: Groq llama-3.1-8b-instant (free tier)
+- **Embeddings**: HuggingFace sentence-transformers/all-MiniLM-L6-v2
+- **Vector Database**: ChromaDB with persistence
+- **Backend**: FastAPI with async support
+- **Caching**: Smart embedding caching to improve startup performance
+
+---
+
+## Testing
+
+The system includes a test mode for trying RAG functionality without real Canvas courses:
+
+```bash
+# Load mock data (2 courses, 3 assignments, 3 files)
+canvas test
+
+# Test with example queries
+canvas ask "What courses do I have?"
+canvas ask "Tell me about machine learning assignments" 
+canvas ask "What files are available for studying?"
+```
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Test with `canvas test` and real Canvas data
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+Please maintain the ASCII art styling and ensure all CLI commands work properly.
+
+---
+
+## License
+
+This project is MIT-licensed. See LICENSE for details.
+
+---
+
+## Acknowledgments
+
+This project is based on the original Canvas RAG Dashboard concept https://github.com/maxtwotouch/CanvasAIDashboard.git We've enhanced it with:
+- CLI interface
+- Free AI integration using Groq API
+- Local embeddings for cost-effective vector search
+- Performance optimizations and caching
+
+The CLI-focused approach makes it perfect for developers and power users who prefer terminal interfaces over web UIs.
